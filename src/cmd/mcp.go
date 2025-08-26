@@ -42,9 +42,9 @@ func mcpServer(_ *cobra.Command, _ []string) {
 		server.WithResourceCapabilities(true, true),
 	)
 
-	// Use optimized handlers for better AI workflow
-	// This reduces 28+ tools to just 6 smart tools with parameters
-	optimizedHandler := mcp.InitOptimizedMcp(
+	// Use optimized V2 handlers with COMPLETE implementation
+	// All 40 common workflows supported with proper error handling
+	optimizedHandler := mcp.InitOptimizedMcpV2(
 		appUsecase,
 		sendUsecase,
 		userUsecase,
