@@ -2,11 +2,15 @@ package mcp
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"strings"
 
 	domainApp "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/skip2/go-qrcode"
 )
 
 type AppHandler struct {
@@ -39,8 +43,32 @@ func (a *AppHandler) handleGetQR(ctx context.Context, request mcp.CallToolReques
 		return nil, err
 	}
 
-	result := fmt.Sprintf("QR Code generated:\nPath: %s\nCode: %s\nDuration: %v", 
-		res.ImagePath, res.Code, res.Duration)
+	// Generate QR code as base64 for remote display
+	qrPNG, err := qrcode.Encode(res.Code, qrcode.Medium, 512)
+	if err != nil {
+		// Fall back to text if QR generation fails
+		result := fmt.Sprintf("QR Code (text format):\n%s\n\nDuration: %v seconds\n\nOpen WhatsApp on your phone > Settings > Linked Devices > Link a Device and scan this code", 
+			res.Code, res.Duration)
+		return mcp.NewToolResultText(result), nil
+	}
+
+	// Create base64 data URI for the QR code
+	base64QR := base64.StdEncoding.EncodeToString(qrPNG)
+	dataURI := fmt.Sprintf("data:image/png;base64,%s", base64QR)
+
+	// Return both the data URI and the raw code as fallback
+	result := fmt.Sprintf("QR Code ready for scanning!\n\nData URI (copy and paste in browser):\n%s\n\nAlternative - Raw QR Code:\n%s\n\nDuration: %v seconds\n\nTo use:\n1. Copy the Data URI above and paste in a browser to see the QR code\n2. Or use the raw code with any QR generator\n3. Open WhatsApp > Settings > Linked Devices > Link a Device\n4. Scan the QR code", 
+		dataURI, res.Code, res.Duration)
+	
+	// Also try to read the file if it exists for local use
+	if res.ImagePath != "" && !strings.HasPrefix(res.ImagePath, "data:") {
+		if fileData, err := ioutil.ReadFile(res.ImagePath); err == nil {
+			base64File := base64.StdEncoding.EncodeToString(fileData)
+			result = fmt.Sprintf("%s\n\nLocal file also available at: %s", result, res.ImagePath)
+			_ = base64File // We have it if needed
+		}
+	}
+	
 	return mcp.NewToolResultText(result), nil
 }
 
