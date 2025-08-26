@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
-	"strings"
+	"net/url"
 
 	domainApp "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -43,30 +42,49 @@ func (a *AppHandler) handleGetQR(ctx context.Context, request mcp.CallToolReques
 		return nil, err
 	}
 
-	// Generate QR code as base64 for remote display
+	// URL encode the QR code data for use in QR generation services
+	encodedData := url.QueryEscape(res.Code)
+	
+	// Create URLs for different QR code services
+	// QR Server (most reliable, no rate limits)
+	qrServerURL := fmt.Sprintf("https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=%s", encodedData)
+	
+	// QuickChart.io (alternative, supports more customization)
+	quickChartURL := fmt.Sprintf("https://quickchart.io/qr?text=%s&size=512", encodedData)
+	
+	// Generate QR code as base64 for backup
 	qrPNG, err := qrcode.Encode(res.Code, qrcode.Medium, 512)
-	if err != nil {
-		// Fall back to text if QR generation fails
-		result := fmt.Sprintf("QR Code (text format):\n%s\n\nDuration: %v seconds\n\nOpen WhatsApp on your phone > Settings > Linked Devices > Link a Device and scan this code", 
-			res.Code, res.Duration)
-		return mcp.NewToolResultText(result), nil
+	var base64QR string
+	if err == nil {
+		base64QR = base64.StdEncoding.EncodeToString(qrPNG)
 	}
 
-	// Create base64 data URI for the QR code
-	base64QR := base64.StdEncoding.EncodeToString(qrPNG)
-	dataURI := fmt.Sprintf("data:image/png;base64,%s", base64QR)
+	// Create markdown-friendly output
+	result := fmt.Sprintf(`📱 **WhatsApp QR Code Ready!**
 
-	// Return both the data URI and the raw code as fallback
-	result := fmt.Sprintf("QR Code ready for scanning!\n\nData URI (copy and paste in browser):\n%s\n\nAlternative - Raw QR Code:\n%s\n\nDuration: %v seconds\n\nTo use:\n1. Copy the Data URI above and paste in a browser to see the QR code\n2. Or use the raw code with any QR generator\n3. Open WhatsApp > Settings > Linked Devices > Link a Device\n4. Scan the QR code", 
-		dataURI, res.Code, res.Duration)
+![QR Code](%s)
+
+**Alternative QR Code URL:**
+%s
+
+**Validity:** %v seconds
+
+**How to login:**
+1. Open WhatsApp on your phone
+2. Go to Settings → Linked Devices
+3. Tap "Link a Device"
+4. Scan the QR code above
+
+**Troubleshooting:**
+- If the image doesn't load, click on the alternative URL
+- Or copy this raw code and use any QR generator:
+
+%s`, qrServerURL, quickChartURL, res.Duration, res.Code)
 	
-	// Also try to read the file if it exists for local use
-	if res.ImagePath != "" && !strings.HasPrefix(res.ImagePath, "data:") {
-		if fileData, err := ioutil.ReadFile(res.ImagePath); err == nil {
-			base64File := base64.StdEncoding.EncodeToString(fileData)
-			result = fmt.Sprintf("%s\n\nLocal file also available at: %s", result, res.ImagePath)
-			_ = base64File // We have it if needed
-		}
+	// Add base64 data URI as last resort
+	if base64QR != "" {
+		dataURI := fmt.Sprintf("data:image/png;base64,%s", base64QR)
+		result = fmt.Sprintf("%s\n\n**Data URI (paste in browser if images don't work):**\n%s", result, dataURI)
 	}
 	
 	return mcp.NewToolResultText(result), nil
