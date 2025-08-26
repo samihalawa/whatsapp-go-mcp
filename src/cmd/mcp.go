@@ -53,20 +53,6 @@ func mcpServer(_ *cobra.Command, _ []string) {
 		chatUsecase,
 	)
 	optimizedHandler.RegisterTools(mcpServer)
-	
-	// Comment out old handlers - kept for reference
-	// appHandler := mcp.InitMcpApp(appUsecase)
-	// appHandler.AddAppTools(mcpServer)
-	// sendHandler := mcp.InitMcpSend(sendUsecase)
-	// sendHandler.AddSendTools(mcpServer)
-	// userHandler := mcp.InitMcpUser(userUsecase)
-	// userHandler.AddUserTools(mcpServer)
-	// messageHandler := mcp.InitMcpMessage(messageUsecase)
-	// messageHandler.AddMessageTools(mcpServer)
-	// groupHandler := mcp.InitMcpGroup(groupUsecase)
-	// groupHandler.AddGroupTools(mcpServer)
-	// chatHandler := mcp.InitMcpChat(chatUsecase)
-	// chatHandler.AddChatTools(mcpServer)
 
 	// Get port from environment variable (Smithery sets this to 8081)
 	port := os.Getenv("PORT")
