@@ -1,3 +1,4 @@
+```markdown
 <!-- markdownlint-disable MD041 -->
 <!-- markdownlint-disable-next-line MD033 -->
 <div align="center">
@@ -8,6 +9,7 @@
 
 </div>
 
+[![smithery badge](https://smithery.ai/badge/@samihalawa/whatsapp-go-mcp)](https://smithery.ai/server/@samihalawa/whatsapp-go-mcp)
 [![Patreon](https://img.shields.io/badge/Support%20on-Patreon-orange.svg)](https://www.patreon.com/c/aldinokemal)
 **If you're using this tools to generate income, consider supporting its development by becoming a Patreon member!**
 Your support helps ensure the library stays maintained and receives regular updates!
@@ -468,3 +470,4 @@ You can fork or edit this source code !
 - Please use official WhatsApp API to avoid any issues.
 - We only able to run MCP or REST API, this is limitation from whatsmeow library. independent MCP will be available in
   the future.
+```
