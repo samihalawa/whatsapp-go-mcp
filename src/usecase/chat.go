@@ -52,6 +52,7 @@ func (service serviceChat) ListChats(ctx context.Context, request domainChat.Lis
 			Name:            chat.Name,
 			LastMessageTime: chat.LastMessageTime.Format(time.RFC3339),
 			IsGroup:         strings.Contains(chat.JID, "@g.us"),
+			MessagesSynced:  true, // Chats from database have been synced
 			CreatedAt:       chat.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       chat.UpdatedAt.Format(time.RFC3339),
 		}
@@ -92,6 +93,7 @@ func (service serviceChat) ListChats(ctx context.Context, request domainChat.Lis
 			Name:            group.GroupName.Name,
 			LastMessageTime: time.Now().Format(time.RFC3339),
 			IsGroup:         true,
+			MessagesSynced:  false, // Group not yet synced - messages not available yet
 			CreatedAt:       time.Now().Format(time.RFC3339),
 			UpdatedAt:       time.Now().Format(time.RFC3339),
 		}
@@ -123,6 +125,7 @@ func (service serviceChat) ListChats(ctx context.Context, request domainChat.Lis
 			Name:            contact.FullName,
 			LastMessageTime: time.Now().Format(time.RFC3339),
 			IsGroup:         false,
+			MessagesSynced:  false, // Contact not yet synced - messages not available yet
 			CreatedAt:       time.Now().Format(time.RFC3339),
 			UpdatedAt:       time.Now().Format(time.RFC3339),
 		}
@@ -192,7 +195,7 @@ func (service serviceChat) GetChatMessages(ctx context.Context, request domainCh
 		return response, err
 	}
 	if chat == nil {
-		return response, fmt.Errorf("chat with JID %s not found", request.ChatJID)
+		return response, fmt.Errorf("chat with JID %s not found - messages have not been synced yet. Please wait for WhatsApp history sync to complete after login, then try again", request.ChatJID)
 	}
 
 	// Create message filter from request

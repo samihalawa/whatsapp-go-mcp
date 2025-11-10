@@ -56,6 +56,7 @@ type ChatInfo struct {
 	IsArchived          bool    `json:"is_archived"`
 	IsMuted             bool    `json:"is_muted"`
 	IsGroup             bool    `json:"is_group"`
+	MessagesSynced      bool    `json:"messages_synced"` // Indicates if message history has been synced from WhatsApp
 	EphemeralExpiration uint32  `json:"ephemeral_expiration"`
 	CreatedAt           string  `json:"created_at"`
 	UpdatedAt           string  `json:"updated_at"`
