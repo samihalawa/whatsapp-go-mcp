@@ -2,143 +2,93 @@
 
 <a href="https://smithery.ai/server/@samihalawa/whatsapp-go-mcp"><img src="https://smithery.ai/badge/@samihalawa/whatsapp-go-mcp"></a>
 
-WhatsApp GO MCP provides:
-- A comprehensive HTTP REST API for WhatsApp multi-device interactions
-- A Model Context Protocol (MCP) server for AI agent tooling integration
+WhatsApp MCP server for AI agent integration via Model Context Protocol.
 
-Only one mode runs at a time (REST or MCP).
-
----
 ### Key Features
-- REST API endpoints for login, user info, messaging (text, media, polls, presence), chats, groups, newsletters
-- MCP server with tool catalog (served at `/tools`)
-- Webhook support with HMAC SHA256 signature (`X-Hub-Signature-256`)
-- Image/video compression options
-- Custom device name (`--os=MyApp`)
-- Basic Auth (multi-credential)
-- Subpath deployment (`--base-path=/gowa`)
-- Auto-reply & auto mark-read toggles
-- Chat storage (SQLite by default)
-- Media handling via FFmpeg
+- 50+ MCP tools for WhatsApp interactions (send, receive, groups, contacts)
+- HTTP Streamable transport (Smithery.ai compatible)
+- Stateless mode for scalability
+- Session management with SQLite
+- Media handling (images, videos, audio, files)
+- Group and contact management
+- Message reactions, replies, and editing
 - Persistent storage volume (`/app/storages`)
 
 ---
-### Configuration Priority
-1. Command-line flags
-2. Environment variables
-3. `.env` file (lowest)
+### Quick Start (MCP Mode)
 
-Copy example:
+**Deploy on Smithery:**
 ```bash
-cp src/.env.example src/.env
+npx @smithery/cli deploy
 ```
 
-Essential environment variables:
-
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| APP_PORT | REST port | 3000 |
-| APP_DEBUG | Debug logging | false |
-| APP_OS | WhatsApp device label | Chrome |
-| APP_BASIC_AUTH | Basic auth credentials | (none) |
-| APP_BASE_PATH | Base subpath prefix | (none) |
-| DB_URI | Main DB URI | file:storages/whatsapp.db?_foreign_keys=on |
-| WHATSAPP_WEBHOOK | Webhook URLs (comma-separated) | (none) |
-| WHATSAPP_WEBHOOK_SECRET | HMAC key | secret |
-| WHATSAPP_AUTO_REPLY | Auto-reply text | (none) |
-| WHATSAPP_AUTO_MARK_READ | Mark incoming read | false |
-| WHATSAPP_ACCOUNT_VALIDATION | Account validation | true |
-| WHATSAPP_CHAT_STORAGE | Enable chat storage | true |
-
-Flags override all.
-
----
-### Requirements (Local Build)
-- Go 1.24+
-- FFmpeg installed (outside Docker)
-- SQLite (CGO) included via Go build
-
-macOS fix (if needed):
-```bash
-export CGO_CFLAGS_ALLOW="-Xpreprocessor"
-```
-
----
-### REST Mode
+**Local Development:**
 ```bash
 git clone https://github.com/samihalawa/whatsapp-go-mcp.git
 cd whatsapp-go-mcp/src
-go run . rest
-# or
-go build -o whatsapp && ./whatsapp rest
-```
-Open: http://localhost:3000
-
-### MCP Mode
-```bash
-cd whatsapp-go-mcp/src
 go run . mcp
-# or
-go build -o whatsapp && ./whatsapp mcp
-```
-Defaults (flags: `--host`, `--port`):
-- Port: 8081 (container & default)
-- Endpoints:
-  - `/mcp` (MCP HTTP stream)
-  - `/health` (status)
-  - `/tools` (tool catalog)
-
-### Docker (REST)
-Uses `docker/golang.Dockerfile`
-```bash
-docker-compose up -d --build
-# REST at http://localhost:3000
 ```
 
-### Docker (MCP / Smithery)
-Root Dockerfile (multi-stage, Chromium + FFmpeg for WhatsApp web automation):
+**Docker:**
 ```bash
 docker build -t whatsapp-go-mcp .
 docker run -p 8081:8081 whatsapp-go-mcp
 ```
 
+MCP server runs on port 8081 by default.
+
 ---
-### Webhooks
-See <a>docs/webhook-payload.md</a> for:
-- Message events (text, reaction, edit, revoke)
-- Receipt events (`message.ack`: delivered, read)
-- Group participant events
-- Media payload shapes
-- View-once & forwarded flags
-- Integration examples (Node.js, Python)
-Configure:
+### MCP Endpoints
+- `/mcp` - MCP HTTP stream (main endpoint)
+- `/health` - Health check
+- `/tools` - Available tools catalog (JSON)
+
+### Available Tools
+The MCP server provides 50+ tools organized in categories:
+- **App**: QR login, device management, logout
+- **Send**: Text, images, videos, audio, files, contacts, locations, polls
+- **User**: Info, avatar, contacts, groups, privacy settings
+- **Message**: React, delete, edit, star, mark as read
+- **Group**: Create, manage, participants, settings
+- **Chat**: List, archive, delete conversations
+- **Newsletter**: Manage newsletter subscriptions
+
+See `/tools` endpoint for complete list.
+
+---
+### Configuration
+Environment variables (optional):
+- `PORT` - Server port (default: 8081)
+- `DB_URI` - Database path (default: file:storages/whatsapp.db)
+- `APP_OS` - WhatsApp device label (default: Chrome)
+
+Command-line flags:
 ```bash
-./whatsapp rest --webhook="https://your.site/hook" --webhook-secret="customkey"
+./whatsapp mcp --port 8081 --host 0.0.0.0
 ```
 
 ---
-### API Specification
-OpenAPI: <a>docs/openapi.yaml</a>
-
-Base server (REST): `http://localhost:3000`
-
-Endpoints categories: /app, /user, /send, /message, /group, /newsletter, /chats
-
-Refer to the OpenAPI file for latest contract (keep updated when adding endpoints).
+### Storage
+WhatsApp session data is persisted in `/app/storages` (Docker volume).
+This includes authentication state and message history.
 
 ---
-### MCP Tooling
-MCP server publishes tool inventory at `/tools` (JSON).
-Smithery integration config: <a>smithery.yaml</a>
-Deployment helper: `deploy.sh` (builds binary, bundles statics + docs, runs `smithery deploy`).
+### Development
+```bash
+# Build
+cd src && go build -o whatsapp
+
+# Test
+go test ./...
+
+# Run locally
+./whatsapp mcp
+```
+
+Requirements: Go 1.24+, SQLite (CGO enabled)
 
 ---
-### Persistent Data
-Volume path: `/app/storages`
-Includes session DB and optional chat history.
-
----
-### Important
-- Unofficial project (not affiliated with WhatsApp).
-- REST and MCP modes are mutually exclusive (underlying library constraint).
-- Keep OpenAPI and README synchronized with code whenever adding/modifying endpoints.
+### Notes
+- Unofficial project (not affiliated with WhatsApp)
+- Built on whatsmeow library for WhatsApp Web Multi-Device
+- Smithery.ai compatible with HTTP Streamable transport
